@@ -37,7 +37,7 @@ def parse_args(args=None):
     parser.add_argument('-pw', '--phase_weight', default=0.5, type=float)
 
     parser.add_argument('-lr', '--learning_rate', default=0.0001, type=float)
-    parser.add_argument('-cpu', '--cpu_num', default=10, type=int)
+    parser.add_argument('-cpu', '--cpu_num', default=4, type=int)
     parser.add_argument('-init', '--init_checkpoint', default=None, type=str)
     parser.add_argument('-save', '--save_path', default=None, type=str)
     parser.add_argument('--max_steps', default=100000, type=int)
@@ -280,6 +280,62 @@ def main(args):
         metrics = kge_model.test_step(kge_model, data_reader, ModeType.TEST, args)
         log_metrics('Test', step, metrics)
 
+    # kge_model.get_embedding()
+
+
+def temp(args):
+    if (not args.do_train) and (not args.do_valid) and (not args.do_test):
+        raise ValueError('one of train/val/test mode must be choosed.')
+
+    if args.init_checkpoint:
+        logging.info('Start override configs...')
+        override_config(args)
+        logging.info('Override args done!')
+    elif args.data_path is None:
+        raise ValueError('one of init_checkpoint/data_path must be choosed.')
+
+    if args.do_train and args.save_path is None:
+        raise ValueError('Where do you want to save your trained model?')
+
+    if args.save_path and not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+
+    # Write logs to checkpoint and console
+    set_logger(args)
+
+    data_reader = DataReader(args.data_path)
+    num_entity = len(data_reader.entity_dict)
+    num_relation = len(data_reader.relation_dict)
+
+    logging.info('Model: {}'.format(args.model))
+    logging.info('Data Path: {}'.format(args.data_path))
+    logging.info('Num Entity: {}'.format(num_entity))
+    logging.info('Num Relation: {}'.format(num_relation))
+
+    logging.info('Num Train: {}'.format(len(data_reader.train_data)))
+    logging.info('Num Valid: {}'.format(len(data_reader.valid_data)))
+    logging.info('Num Test: {}'.format(len(data_reader.test_data)))
+
+    if args.model == 'ModE':
+        kge_model = ModE(num_entity, num_relation, args.hidden_dim, args.gamma)
+    elif args.model == 'HAKE':
+        kge_model = HAKE(num_entity, num_relation, args.hidden_dim, args.gamma, args.modulus_weight, args.phase_weight)
+
+    logging.info('Model Parameter Configuration:')
+    for name, param in kge_model.named_parameters():
+        logging.info('Parameter %s: %s, require_grad = %s' % (name, str(param.size()), str(param.requires_grad)))
+
+    kge_model = kge_model.cuda()
+
+    if args.init_checkpoint:
+        # Restore model from checkpoint directory
+        logging.info('Loading checkpoint %s...' % args.init_checkpoint)
+        checkpoint = torch.load(os.path.join(args.init_checkpoint, 'checkpoint'))
+        kge_model.load_state_dict(checkpoint['model_state_dict'])
+    
+    kge_model.get_embedding()
+
 
 if __name__ == '__main__':
-    main(parse_args())
+    # main(parse_args())
+    temp(parse_args())

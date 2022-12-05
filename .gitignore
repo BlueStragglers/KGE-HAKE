@@ -102,3 +102,16 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# data
+entity2vec.bern
+relation2vec.bern
+
+# image
+image/
+
+# models
+models
+
+# temp
+temp.md

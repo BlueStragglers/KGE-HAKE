@@ -336,7 +336,7 @@ class HAKE(KGEModel):
         self.modulus_weight = nn.Parameter(torch.Tensor([[modulus_weight]]))
 
         self.pi = 3.14159262358979323846
-
+        self.step = 0
 
     def func(self, head, rel, tail, batch_type):
         phase_head, mod_head = torch.chunk(head, 2, dim=2)
@@ -364,3 +364,37 @@ class HAKE(KGEModel):
 
         return self.gamma.item() - (phase_score + r_score)
         
+    def get_embedding(self):
+        logging.info('Entity_embedding: %s, relation_embedding: %s' % (self.entity_embedding.shape, self.relation_embedding.shape))
+        logging.info('First entity embedding: %s, first relation embedding: %s' % (self.entity_embedding[0], self.relation_embedding[0]))
+
+        logging.info('Start writting entity embedding tensor...')
+        # self.entity_embedding.cpu()
+        with open('/zxc/20221201_HAKE/KGE-HAKE/data/FB15k-237/entity2vec.bern', mode='w', encoding='utf-8') as f:
+            entity_embedding_list = self.entity_embedding.cpu().detach().numpy().tolist()
+            for entity_list in entity_embedding_list:
+                flag = False
+                for float_value in entity_list:
+                    if flag:
+                        f.write('\t')
+                    else:
+                        flag = True
+                    f.write(f'{float_value}')
+                f.write('\n')
+        f.close()
+
+        logging.info('Start writting relation embedding tensor...')
+        # self.relation_embedding.cpu()
+        with open('/zxc/20221201_HAKE/KGE-HAKE/data/FB15k-237/relation2vec.bern', mode='w', encoding='utf-8') as f:
+            relation_embedding_list = self.relation_embedding.cpu().detach().numpy().tolist()
+            for relation_list in relation_embedding_list:
+                flag = False
+                for float_value in relation_list:
+                    if flag:
+                        f.write('\t')
+                    else:
+                        flag = True
+                    f.write(f'{float_value}')
+                f.write('\n')
+        f.close()
+        logging.info('All done!')
