@@ -368,10 +368,14 @@ class HAKE(KGEModel):
         logging.info('Entity_embedding: %s, relation_embedding: %s' % (self.entity_embedding.shape, self.relation_embedding.shape))
         logging.info('First entity embedding: %s, first relation embedding: %s' % (self.entity_embedding[0], self.relation_embedding[0]))
 
+        phase_entity_embedding, _ = torch.chunk(self.entity_embedding, 2, dim=1)
+        phase_relation_embedding, _, _ = torch.chunk(self.relation_embedding, 3, dim=1)
+        logging.info('Entity_embedding: %s, relation_embedding: %s' % (phase_entity_embedding.shape, phase_relation_embedding.shape))
+
         logging.info('Start writting entity embedding tensor...')
         # self.entity_embedding.cpu()
         with open('/zxc/20221201_HAKE/KGE-HAKE/data/FB15k-237/entity2vec.bern', mode='w', encoding='utf-8') as f:
-            entity_embedding_list = self.entity_embedding.cpu().detach().numpy().tolist()
+            entity_embedding_list = phase_entity_embedding.cpu().detach().numpy().tolist()
             for entity_list in entity_embedding_list:
                 flag = False
                 for float_value in entity_list:
@@ -386,7 +390,7 @@ class HAKE(KGEModel):
         logging.info('Start writting relation embedding tensor...')
         # self.relation_embedding.cpu()
         with open('/zxc/20221201_HAKE/KGE-HAKE/data/FB15k-237/relation2vec.bern', mode='w', encoding='utf-8') as f:
-            relation_embedding_list = self.relation_embedding.cpu().detach().numpy().tolist()
+            relation_embedding_list = phase_relation_embedding.cpu().detach().numpy().tolist()
             for relation_list in relation_embedding_list:
                 flag = False
                 for float_value in relation_list:
